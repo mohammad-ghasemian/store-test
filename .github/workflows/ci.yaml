@@ -26,10 +26,10 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
-          DATABASE_URL: "file:./dev.db"
+          DATABASE_URL: "GAPGPTMASKTOKEN5i4i72v5izX0X"
 
-      - name: Run Linter
-        run: npm run lint
+      - name: Run Biome Check
+        run: npx @biomejs/biome ci .
 
       - name: Check TypeScript Types
         run: npx tsc --noEmit
@@ -37,4 +37,4 @@ jobs:
       - name: Test Build
         run: npm run build
         env:
-          DATABASE_URL: "file:./dev.db"
+          DATABASE_URL: "GAPGPTMASKTOKEN5i4i72v5izX1X"
