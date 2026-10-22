@@ -9,19 +9,22 @@ generator client {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?   // نام و نام خانوادگی
-  phone         String    @unique // شماره موبایل (شناسه اصلی ورود)
-  phoneVerified Boolean   @default(false)
-  email         String?   @unique // ایمیل اختیاری است
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          String    @default("user") // admin | user
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  name                String?   // نام و نام خانوادگی
+  email               String?   @unique // ایمیل اختیاری است
+  emailVerified       Boolean   @default(false)
+  image               String?
+  role                String    @default("user") // admin | user
 
-  sessions      Session[]
-  accounts      Account[]
+  // نام‌گذاری‌های استاندارد مورد انتظار Better Auth برای شماره موبایل
+  phoneNumber         String?   @unique
+  phoneNumberVerified Boolean   @default(false)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  sessions            Session[]
+  accounts            Account[]
 
   @@map("user")
 }
@@ -48,23 +51,25 @@ model Account {
   providerId            String
   accessToken           String?
   refreshToken          String?
+  idToken               String?   // اضافه شده برای سازگاری با OAuth
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
-  password              String?   // برای زمانی که کاربر رمز عبور تعیین می‌کند
+  password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([providerId, accountId])
   @@map("account")
 }
 
 model Verification {
   id         String   @id @default(cuid())
-  identifier String   // می‌تواند شماره موبایل کاربر باشد
-  value      String   // کد OTP (مثلاً 548201)
-  expiresAt  DateTime // زمان انقضا (مثلاً ۲ دقیقه بعد از تولید)
+  identifier String   // شماره موبایل یا ایمیل
+  value      String   // کد OTP
+  expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
