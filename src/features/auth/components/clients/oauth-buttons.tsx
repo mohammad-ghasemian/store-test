@@ -42,7 +42,6 @@ export function OAuthButtons() {
         ) : (
           <GoogleIcon className="size-4 shrink-0" />
         )}
-        ورود با گوگل
       </Button>
 
       <Button
@@ -56,7 +55,6 @@ export function OAuthButtons() {
         ) : (
           <GithubIcon className="size-4 shrink-0" />
         )}
-        ورود با گیت‌هاب
       </Button>
     </div>
   );
