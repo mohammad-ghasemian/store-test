@@ -43,3 +43,24 @@
 
 ۴. ساخت API Route نکست (app/api/auth/[...all]/route.ts):
    - هندل کردن متدهای GET و POST از طریق toNextJsHandler(auth).
+
+=====================================================
+سودوکد مرحله ۳: راه‌اندازی Client Auth و اسکیماهای Valibot
+=====================================================
+۱. ساخت Better Auth Client (lib/auth-client.ts):
+   - ایمپورت createAuthClient و phoneNumberClient از better-auth/client/plugins.
+   - ایجاد کلاینت با baseURL پروژه.
+   - فعال‌سازی پلاگین phoneNumberClient برای اینکه متدهای OTP در کلاینت تایپ‌سیف باشند.
+
+۲. ساخت اسکیماهای ولیدیشن با Valibot (validations/auth.schema.ts):
+   الف) اسکیمای شماره موبایل (SendOtpSchema):
+        - ورودی: phone به عنوان string
+        - پاکسازی: trim کردن فاصله‌های اضافی
+        - شرط ۱: نباید خالی باشد.
+        - شرط ۲: تطابق با ریجکس شماره موبایل ایران (شروع با 09 و دقیقاً ۱۱ رقم، یا فرمت +989).
+        - پیام خطای شفاف در صورت نامعتبر بودن.
+
+   ب) اسکیمای تایید کد OTP (VerifyOtpSchema):
+        - ورودی: phone و code
+        - شرط phone: مطابق اسکیمای قبلی
+        - شرط code: رشته عددی با طول دقیق مشخص (مثلاً ۵ یا ۶ رقمی، بدون حرف)
