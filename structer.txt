@@ -1,0 +1,19 @@
+src/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   ├── (dashboard)/
+│   │   └── dashboard/
+│   │       ├── page.tsx          // خلاصه وضعیت و اطلاعات کاربر
+│   │       ├── orders/page.tsx   // پیگیری سفارشات کاربر
+│   │       └── layout.tsx        // سایدبار و دکمه خروج (Logout)
+│   └── api/
+│       └── auth/[...nextauth]/route.ts
+├── features/
+│   └── auth/
+│       ├── actions/              // register.action.ts, login.action.ts
+│       ├── components/           // login-form.tsx, register-form.tsx, logout-button.tsx
+│       ├── schemas/              // auth.schema.ts (Zod)
+│       └── types/                // auth.types.ts
+└── proxy/auth.ts (کانفیگ مرکزی NextAuth)
