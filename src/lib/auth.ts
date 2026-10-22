@@ -1,9 +1,8 @@
-//config for better auth library
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { phoneNumber } from "better-auth/plugins";
 import { prisma } from "@/config/prisma";
-import { sendOtpSms } from "@/service/sms.service";
+import { smsService } from "@/features/auth/service/sms.service";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -22,7 +21,7 @@ export const auth = betterAuth({
   plugins: [
     phoneNumber({
       sendOTP: async ({ phoneNumber, code }) => {
-        await sendOtpSms(phoneNumber, code);
+        await smsService.sendOtp(phoneNumber, code);
       },
     }),
   ],
