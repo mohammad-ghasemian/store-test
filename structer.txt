@@ -14,6 +14,26 @@ src/
 │   └── auth/
 │       ├── actions/              // register.action.ts, login.action.ts
 │       ├── components/           // login-form.tsx, register-form.tsx, logout-button.tsx
+                components/
+│   ├── auth-shell.tsx
+│   ├── auth-switch-tabs.tsx
+│   ├── phone-input.tsx
+│   ├── country-code-select.tsx
+│   ├── social-auth-buttons.tsx
+│   ├── signin-form.tsx
+│   ├── signup-form.tsx
+│   └── otp-input.tsx
+├── schemas/
+│   └── auth.schema.ts
+├── types/
+│   └── index.ts
+├── constants/
+│   └── auth.constants.ts
+├── lib/
+│   └── auth-form.helpers.ts
+├── actions/
+│   └── auth.actions.ts
+└── index.ts
 │       ├── schemas/              // auth.schema.ts (Zod)
 │       └── types/                // auth.types.ts
 └── proxy/auth.ts (کانفیگ مرکزی NextAuth)
