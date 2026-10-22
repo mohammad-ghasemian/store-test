@@ -6,18 +6,11 @@ import { verifyOtpSchema } from "@/features/auth/schemas/auth.schemas";
 import { auth } from "@/lib/auth";
 import type { ActionState } from "./send-otp.action";
 
-export async function verifyOtpAction(
-  _prevState: ActionState | null,
-  formData: FormData,
-): Promise<ActionState> {
-  const rawPhone = formData.get("phone");
-  const rawCode = formData.get("code");
-
-  // ۱. اعتبارسنجی با Valibot
-  const parsed = v.safeParse(verifyOtpSchema, {
-    phone: rawPhone,
-    code: rawCode,
-  });
+export async function verifyOtpAction(input: {
+  phone: string;
+  code: string;
+}): Promise<ActionState> {
+  const parsed = v.safeParse(verifyOtpSchema, input);
 
   if (!parsed.success) {
     const issue = parsed.issues[0];

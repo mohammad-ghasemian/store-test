@@ -11,14 +11,11 @@ export type ActionState = {
   error?: string;
 };
 
-export async function sendOtpAction(
-  _prevState: ActionState | null,
-  formData: FormData,
-): Promise<ActionState> {
-  const rawPhone = formData.get("phone");
-
-  // ۱. اعتبارسنجی ورودی با Valibot
-  const parsed = v.safeParse(sendOtpSchema, { phone: rawPhone });
+// دریافت مستقیم آبجکت داده به جای prevState و formData
+export async function sendOtpAction(input: {
+  phone: string;
+}): Promise<ActionState> {
+  const parsed = v.safeParse(sendOtpSchema, input);
 
   if (!parsed.success) {
     const issue = parsed.issues[0];
