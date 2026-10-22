@@ -11,7 +11,6 @@ export type ActionState = {
   error?: string;
 };
 
-// دریافت مستقیم آبجکت داده به جای prevState و formData
 export async function sendOtpAction(input: {
   phone: string;
 }): Promise<ActionState> {
