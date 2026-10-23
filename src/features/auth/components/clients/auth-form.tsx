@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { Check, Copy } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,8 @@ export function AuthForm() {
   const [otpCode, setOtpCode] = useState("");
   const [step, setStep] = useState<"PHONE" | "OTP">("PHONE");
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
+  const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +38,7 @@ export function AuthForm() {
 
     if (!/^(\+98|0)?9\d{9}$/.test(normalized)) {
       toast.error(
-        "لطفاً یک شماره موبایل معتبر ایران وارد کنید (مثال: 09123456789)",
+        "خطا: لطفاً یک شماره موبایل معتبر ایران وارد کنید (مثال: 09123456789)",
       );
       return;
     }
@@ -46,21 +47,34 @@ export function AuthForm() {
       try {
         const result = await sendOtpAction({ phone: normalized });
         if (result.success) {
-          toast.success("کد تایید ارسال شد.");
+          toast.success("کد تایید با موفقیت ارسال شد.");
           setStep("OTP");
+
+          if (result.devCode) {
+            setDevOtp(result.devCode);
+          }
         } else {
-          toast.error(result.error || "خطا در ارسال کد تایید");
+          toast.error(result.error || "خطا در ارسال کد تایید.");
         }
       } catch {
-        toast.error("خطای سرور رخ داد.");
+        toast.error("خطای سرور: ارتباط با سرور برقرار نشد.");
       }
     });
+  };
+
+  const handleCopyOtp = () => {
+    if (devOtp) {
+      navigator.clipboard.writeText(devOtp);
+      setCopied(true);
+      toast.success("کد تایید در کلیپ‌بورد کپی شد!");
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
     if (otpCode.length < 6) {
-      toast.error("لطفاً کد ۶ رقمی را کامل وارد کنید.");
+      toast.error("خطا: لطفاً کد ۶ رقمی را کامل وارد کنید.");
       return;
     }
 
@@ -73,14 +87,13 @@ export function AuthForm() {
           code: otpCode,
         });
         if (result.success) {
-          toast.success("ورود با موفقیت انجام شد!");
-          router.push("/");
-          router.refresh();
+          toast.success("ورود موفقیت‌آمیز بود! در حال انتقال...");
+          window.location.href = "/";
         } else {
-          toast.error(result.error || "کد تایید نامعتبر است.");
+          toast.error(result.error || "کد تایید نامعتبر است یا منقضی شده.");
         }
       } catch {
-        toast.error("خطای سرور رخ داد.");
+        toast.error("خطای سرور: تایید کد با خطا مواجه شد.");
       }
     });
   };
@@ -134,6 +147,34 @@ export function AuthForm() {
               <span className="font-mono">{phoneNumber}</span> را وارد کنید.
             </p>
           </div>
+
+          {devOtp && (
+            <div className="bg-muted/60 border-border flex w-full items-center justify-between rounded-lg border p-3 text-sm">
+              <span className="text-muted-foreground text-xs">
+                کد تست (Development):
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-primary font-mono font-bold tracking-widest">
+                  {devOtp}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={handleCopyOtp}
+                  title="کپی کردن کد"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div dir="ltr" className="flex justify-center">
             <InputOTP
               maxLength={6}
@@ -178,6 +219,7 @@ export function AuthForm() {
               onClick={() => {
                 setStep("PHONE");
                 setOtpCode("");
+                setDevOtp(null);
               }}
               disabled={isPending}
             >

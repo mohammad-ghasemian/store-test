@@ -9,6 +9,7 @@ export type ActionState = {
   success: boolean;
   message?: string;
   error?: string;
+  devCode?: string;
 };
 
 export async function sendOtpAction(input: {
@@ -27,9 +28,15 @@ export async function sendOtpAction(input: {
   const { phone } = parsed.output;
 
   try {
+    const generatedCode =
+      process.env.NODE_ENV === "development"
+        ? Math.floor(100000 + Math.random() * 900000).toString()
+        : undefined;
+
     await auth.api.sendPhoneNumberOTP({
       body: {
         phoneNumber: phone,
+        // اگر بیتر-آث اجازه دهد، می‌توانید کد را پاس دهید؛ در غیر این صورت فقط برای نمایش در UI توسعه استفاده می‌شود
       },
       headers: await headers(),
     });
@@ -37,6 +44,7 @@ export async function sendOtpAction(input: {
     return {
       success: true,
       message: "کد تایید با موفقیت ارسال شد.",
+      devCode: generatedCode,
     };
   } catch (err: unknown) {
     const error = err as Error;
