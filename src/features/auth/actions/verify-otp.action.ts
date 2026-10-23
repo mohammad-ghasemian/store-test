@@ -13,33 +13,39 @@ export async function verifyOtpAction(input: {
   const parsed = v.safeParse(verifyOtpSchema, input);
 
   if (!parsed.success) {
-    const issue = parsed.issues[0];
     return {
       success: false,
-      error: issue?.message || "اطلاعات وارد شده نامعتبر است.",
+      error: parsed.issues[0]?.message || "اطلاعات وارد شده نامعتبر است.",
     };
   }
 
-  const { phone, code } = parsed.output;
-
   try {
-    await auth.api.verifyPhoneNumber({
+    const result = await auth.api.verifyPhoneNumber({
       body: {
-        phoneNumber: phone,
-        code: code,
+        phoneNumber: parsed.output.phone,
+        code: parsed.output.code,
       },
       headers: await headers(),
     });
+
+    if (!result) {
+      return {
+        success: false,
+        error: "تأیید شماره موبایل انجام نشد.",
+      };
+    }
 
     return {
       success: true,
       message: "ورود با موفقیت انجام شد.",
     };
-  } catch (err: unknown) {
-    const error = err as Error;
+  } catch (error: unknown) {
     return {
       success: false,
-      error: error.message || "کد تایید اشتباه یا منقضی شده است.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "کد تایید اشتباه یا منقضی شده است.",
     };
   }
 }
