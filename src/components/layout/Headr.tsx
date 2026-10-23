@@ -1,24 +1,18 @@
-import { ArrowLeft, ShoppingBag } from "lucide-react";
-import { headers } from "next/headers";
+import { ShoppingBag } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { Button } from "@/components/ui/button";
 import { MAIN_NAV_ITEMS } from "@/config/nav.config";
-import { UserMenu } from "@/features/user/components/clients/user-menu";
-import { auth } from "@/lib/auth";
+import {
+  UserAuthCheck,
+  UserAuthCheckSkeleton,
+} from "@/features/user/components/server/user-auth-check";
 
-export async function Header() {
-  const reqHeaders = await headers();
-  const session = await auth.api.getSession({
-    headers: reqHeaders,
-  });
-
+export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-zinc-200/60 bg-white/75 backdrop-blur-xl transition-colors dark:border-zinc-800/60 dark:bg-zinc-950/75">
       <div className="container mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-        {/* برند، منوی موبایل و لینک‌های دسکتاپ */}
         <div className="flex items-center gap-2 sm:gap-8">
-          {/* دکمه منوی موبایل (فقط در صفحات کوچک) */}
           <MobileNav />
 
           <Link
@@ -31,7 +25,6 @@ export async function Header() {
             <span className="text-sm font-semibold tracking-wide">STORE</span>
           </Link>
 
-          {/* لینک‌های دسکتاپ */}
           <nav className="hidden items-center gap-1 sm:flex">
             {MAIN_NAV_ITEMS.map((item) => (
               <Link
@@ -45,7 +38,7 @@ export async function Header() {
           </nav>
         </div>
 
-        {/* اکشن‌های سمت چپ (سبد خرید و اکانت) */}
+        {/* اکشن‌های سبد خرید و اعتبارسنجی کاربر */}
         <div className="flex items-center gap-2">
           <Link
             href="/cart"
@@ -60,21 +53,10 @@ export async function Header() {
 
           <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-          {session?.user ? (
-            <UserMenu user={session.user} />
-          ) : (
-            <Button
-              asChild
-              size="sm"
-              variant="default"
-              className="h-8 gap-1.5 rounded-full px-3 text-xs font-medium shadow-none"
-            >
-              <Link href="/sign-in">
-                <span>ورود</span>
-                <ArrowLeft className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          )}
+          {/* استریمینگ بررسی کاربر با نام شفاف */}
+          <Suspense fallback={<UserAuthCheckSkeleton />}>
+            <UserAuthCheck />
+          </Suspense>
         </div>
       </div>
     </header>
