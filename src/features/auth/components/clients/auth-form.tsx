@@ -93,7 +93,7 @@ export function AuthForm() {
         }
 
         toast.success("ورود با موفقیت انجام شد.");
-        router.replace("/");
+        router.replace("/store");
         router.refresh();
       } catch {
         toast.error("بررسی کد تایید با خطا مواجه شد.");
