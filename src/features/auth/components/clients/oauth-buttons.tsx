@@ -23,7 +23,7 @@ export function OAuthButtons() {
     try {
       const { error } = await authClient.signIn.social({
         provider,
-        callbackURL: "/",
+        callbackURL: "/store",
       });
 
       if (error) {
