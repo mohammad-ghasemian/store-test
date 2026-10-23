@@ -1,18 +1,23 @@
 export interface SendSmsResult {
   success: boolean;
   message: string;
-  otpCode?: string;
 }
+const g = globalThis as unknown as { __devOtps?: Map<string, string> };
+g.__devOtps = g.__devOtps ?? new Map<string, string>();
+const devOtps = g.__devOtps;
 
 export const smsService = {
   async sendOtp(phone: string, code: string): Promise<SendSmsResult> {
-    console.log(`[SMS SERVICE] Sending OTP ${code} to phone ${phone}`);
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    if (process.env.NODE_ENV !== "production") {
+      devOtps.set(phone, code);
+      console.log(`[SMS SERVICE] OTP ${code} -> ${phone}`);
+    }
+    // TODO: اتصال به پنل پیامک واقعی
+    return { success: true, message: "کد تایید با موفقیت ارسال شد." };
+  },
 
-    return {
-      success: true,
-      message: "کد تایید با موفقیت ارسال شد.",
-      otpCode: code,
-    };
+  getDevCode(phone: string): string | undefined {
+    if (process.env.NODE_ENV === "production") return undefined;
+    return devOtps.get(phone);
   },
 };

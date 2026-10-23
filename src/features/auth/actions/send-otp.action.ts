@@ -2,12 +2,15 @@
 
 import * as v from "valibot";
 import { sendOtpSchema } from "@/features/auth/schemas/auth.schemas";
+import { smsService } from "@/features/auth/service/sms.service";
+import { normalizeIranPhone } from "@/features/auth/utils/phone";
 import { auth } from "@/lib/auth";
 
 export type ActionState = {
   success: boolean;
   message?: string;
   error?: string;
+  devCode?: string;
 };
 
 export async function sendOtpAction(input: {
@@ -22,16 +25,15 @@ export async function sendOtpAction(input: {
     };
   }
 
+  const phone = normalizeIranPhone(parsed.output.phone);
+
   try {
-    await auth.api.sendPhoneNumberOTP({
-      body: {
-        phoneNumber: parsed.output.phone,
-      },
-    });
+    await auth.api.sendPhoneNumberOTP({ body: { phoneNumber: phone } });
 
     return {
       success: true,
       message: "کد تایید با موفقیت ارسال شد.",
+      devCode: smsService.getDevCode(phone),
     };
   } catch (error: unknown) {
     return {

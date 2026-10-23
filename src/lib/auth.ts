@@ -6,9 +6,7 @@ import { prisma } from "@/config/prisma";
 import { smsService } from "@/features/auth/service/sms.service";
 
 export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   socialProviders: {
@@ -26,16 +24,16 @@ export const auth = betterAuth({
       sendOTP: async ({ phoneNumber, code }) => {
         await smsService.sendOtp(phoneNumber, code);
       },
+      signUpOnVerification: {
+        getTempEmail: (phone) => `${phone.replace("+", "")}@phone.local`,
+        getTempName: (phone) => phone,
+      },
     }),
     nextCookies(),
   ],
   user: {
     additionalFields: {
-      role: {
-        type: "string",
-        defaultValue: "user",
-        input: false,
-      },
+      role: { type: "string", defaultValue: "user", input: false },
     },
   },
 });

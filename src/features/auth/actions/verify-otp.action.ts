@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import * as v from "valibot";
 import { verifyOtpSchema } from "@/features/auth/schemas/auth.schemas";
+import { normalizeIranPhone } from "@/features/auth/utils/phone";
 import { auth } from "@/lib/auth";
 import type { ActionState } from "./send-otp.action";
 
@@ -20,25 +21,15 @@ export async function verifyOtpAction(input: {
   }
 
   try {
-    const result = await auth.api.verifyPhoneNumber({
+    await auth.api.verifyPhoneNumber({
       body: {
-        phoneNumber: parsed.output.phone,
+        phoneNumber: normalizeIranPhone(parsed.output.phone),
         code: parsed.output.code,
       },
       headers: await headers(),
     });
 
-    if (!result) {
-      return {
-        success: false,
-        error: "تأیید شماره موبایل انجام نشد.",
-      };
-    }
-
-    return {
-      success: true,
-      message: "ورود با موفقیت انجام شد.",
-    };
+    return { success: true, message: "ورود با موفقیت انجام شد." };
   } catch (error: unknown) {
     return {
       success: false,
