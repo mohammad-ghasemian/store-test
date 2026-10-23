@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { AuthForm } from "@/features/auth/components/clients/auth-form";
 import { OAuthButtons } from "@/features/auth/components/clients/oauth-buttons";
-import loginBg from "../../../../public/images/login.webp";
 
 export const metadata: Metadata = {
   title: "ورود / ثبت‌نام | فروشگاه",
@@ -14,11 +13,10 @@ export default function SignInPage() {
   return (
     <main className="relative isolate flex min-h-dvh w-full items-center justify-center overflow-hidden bg-zinc-950 px-4 py-8 sm:px-6">
       <Image
-        src={loginBg}
+        src="/images/login.webp"
         alt="صفحه ورود"
         fill
         priority
-        placeholder="blur"
         sizes="100vw"
         quality={75}
         className="-z-20 object-cover object-center"
