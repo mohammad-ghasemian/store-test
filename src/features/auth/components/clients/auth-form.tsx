@@ -31,6 +31,7 @@ export function AuthForm() {
   const [isPending, startTransition] = useTransition();
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
 
