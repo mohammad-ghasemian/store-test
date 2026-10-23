@@ -31,14 +31,14 @@ export function AuthForm() {
   const [isPending, startTransition] = useTransition();
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
+
     const normalized = normalizeIranPhone(phoneNumber);
 
     if (!/^(\+98|0)?9\d{9}$/.test(normalized)) {
       toast.error(
-        "خطا: لطفاً یک شماره موبایل معتبر ایران وارد کنید (مثال: 09123456789)",
+        "لطفاً یک شماره موبایل معتبر ایران وارد کنید (مثال: 09123456789)",
       );
       return;
     }
@@ -46,13 +46,11 @@ export function AuthForm() {
     startTransition(async () => {
       try {
         const result = await sendOtpAction({ phone: normalized });
+
         if (result.success) {
           toast.success("کد تایید با موفقیت ارسال شد.");
           setStep("OTP");
-
-          if (result.devCode) {
-            setDevOtp(result.devCode);
-          }
+          setDevOtp(null);
         } else {
           toast.error(result.error || "خطا در ارسال کد تایید.");
         }
@@ -61,7 +59,6 @@ export function AuthForm() {
       }
     });
   };
-
   const handleCopyOtp = () => {
     if (devOtp) {
       navigator.clipboard.writeText(devOtp);
@@ -73,8 +70,9 @@ export function AuthForm() {
 
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpCode.length < 6) {
-      toast.error("خطا: لطفاً کد ۶ رقمی را کامل وارد کنید.");
+
+    if (otpCode.length !== 6) {
+      toast.error("لطفاً کد ۶ رقمی را کامل وارد کنید.");
       return;
     }
 
@@ -86,14 +84,15 @@ export function AuthForm() {
           phone: normalized,
           code: otpCode,
         });
-        if (result.success) {
-          toast.success("ورود موفقیت‌آمیز بود! در حال انتقال...");
-          window.location.href = "/";
-        } else {
+
+        if (!result.success) {
           toast.error(result.error || "کد تایید نامعتبر است یا منقضی شده.");
+          return;
         }
+
+        window.location.assign("/");
       } catch {
-        toast.error("خطای سرور: تایید کد با خطا مواجه شد.");
+        toast.error("تأیید کد با خطا مواجه شد.");
       }
     });
   };
