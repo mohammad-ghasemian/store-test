@@ -31,7 +31,7 @@ export function MobileNav() {
 
       <SheetContent
         side="right"
-        className="w-[280px] border-l border-zinc-200 bg-white/95 p-6 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/95"
+        className="w-70 border-l border-zinc-200 bg-white/95 p-6 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/95"
       >
         <SheetHeader className="text-right">
           <SheetTitle className="flex items-center gap-2">
