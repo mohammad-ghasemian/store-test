@@ -75,3 +75,60 @@ model Verification {
 
   @@map("verification")
 }
+
+
+// نقش‌های سیستم مدیریت
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  CONTENT_MANAGER
+  SUPPORT
+}
+
+// وضعیت اکانت
+enum AdminStatus {
+  ACTIVE
+  SUSPENDED
+  LOCKED
+}
+
+// جدول اختصاصی مدیران سیستم
+model AdminUser {
+  id           String      @id @default(cuid())
+  username     String      @unique
+  fullName     String
+  passwordHash String
+  role         AdminRole   @default(SUPPORT)
+  status       AdminStatus @default(ACTIVE)
+
+  // بخش امنیت ورود دومرحله‌ای
+  mfaSecret    String?     // کلید TOTP یا سکرت OTP
+  isMfaEnabled Boolean     @default(true)
+
+  // جلوگیری از حملات Brute Force
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  auditLogs    AdminAuditLog[]
+
+  @@map("admin_users")
+}
+
+// جدول ثبت وقایع امنیتی و تغییرات (کی، چه زمانی، چه کاری کرد)
+model AdminAuditLog {
+  id        String    @id @default(cuid())
+  adminId   String
+  action    String    // مثلا: LOGIN_SUCCESS, PRODUCT_UPDATE
+  resource  String?   // مثلا: Product:123
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  admin     AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@map("admin_audit_logs")
+}
