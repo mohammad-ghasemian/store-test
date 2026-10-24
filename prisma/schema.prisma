@@ -76,8 +76,8 @@ model Verification {
   @@map("verification")
 }
 
-
 // نقش‌های سیستم مدیریت
+
 enum AdminRole {
   SUPER_ADMIN
   ADMIN
@@ -85,7 +85,7 @@ enum AdminRole {
   SUPPORT
 }
 
-// وضعیت اکانت
+// وضعیت اکانت ادمین
 enum AdminStatus {
   ACTIVE
   SUSPENDED
@@ -94,35 +94,35 @@ enum AdminStatus {
 
 // جدول اختصاصی مدیران سیستم
 model AdminUser {
-  id           String      @id @default(cuid())
-  username     String      @unique
-  fullName     String
-  passwordHash String
-  role         AdminRole   @default(SUPPORT)
-  status       AdminStatus @default(ACTIVE)
+  id             String          @id @default(cuid())
+  username       String          @unique
+  fullName       String
+  passwordHash   String
+  role           AdminRole       @default(SUPPORT)
+  status         AdminStatus     @default(ACTIVE)
 
-  // بخش امنیت ورود دومرحله‌ای
-  mfaSecret    String?     // کلید TOTP یا سکرت OTP
-  isMfaEnabled Boolean     @default(true)
+  // لایه امنیت ورود دو مرحله‌ای (TOTP)
+  mfaSecret      String?         // کلید سکرت Base32 برای الگوریتم TOTP
+  isMfaEnabled   Boolean         @default(true) // امکان فعال/غیرفعال کردن اجباری بودن MFA توسط سوپرادمین
+  mfaConfirmed   Boolean         @default(false) // آیا راه‌اندازی اولیه و اسکن بارکد با موفقیت تأیید شده است؟
 
-  // جلوگیری از حملات Brute Force
-  failedAttempts Int       @default(0)
+  failedAttempts Int             @default(0)
   lockedUntil    DateTime?
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
-  auditLogs    AdminAuditLog[]
+  auditLogs      AdminAuditLog[]
 
   @@map("admin_users")
 }
 
-// جدول ثبت وقایع امنیتی و تغییرات (کی، چه زمانی، چه کاری کرد)
+// جدول ثبت وقایع امنیتی و تغییرات سامانه ادمین
 model AdminAuditLog {
   id        String    @id @default(cuid())
   adminId   String
-  action    String    // مثلا: LOGIN_SUCCESS, PRODUCT_UPDATE
-  resource  String?   // مثلا: Product:123
+  action    String    // مثلا: LOGIN_SUCCESS, MFA_SETUP_SUCCESS, MFA_VERIFY_FAILED, PRODUCT_UPDATE
+  resource  String?   // منبع تحت تأثیر (مثلا: AdminUser:cuid یا Product:123)
   ipAddress String?
   userAgent String?
   createdAt DateTime  @default(now())
