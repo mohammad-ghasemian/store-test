@@ -1,7 +1,15 @@
+// src/middleware.ts
+
+import { jwtVerify } from "jose";
 import { type NextRequest, NextResponse } from "next/server";
 import { ADMIN_PANEL_ROLES, type Role } from "@/config/roles.config";
 
-// چک میکنه که نقش کاربر جزو لیست مجاز ادمین هست یا نه (برای جلوگیری از خطای any)
+const ADMIN_JWT_SECRET = new TextEncoder().encode(
+  process.env.ADMIN_JWT_SECRET ||
+    process.env.AUTH_SECRET ||
+    "dev-only-fallback-change-me",
+);
+
 function isAllowedRole(role: string): role is Role {
   return (ADMIN_PANEL_ROLES as readonly string[]).includes(role);
 }
@@ -9,26 +17,39 @@ function isAllowedRole(role: string): role is Role {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // فعلا به صورت تستی - بعدا با سشن واقعی پروژه پر میشه
-  const isLoggedIn = false;
-  const userRole = "";
+  // ۱. خواندن کوکی نشست ادمین
+  const sessionToken = request.cookies.get("admin_session")?.value;
 
-  // اگر ادمین قبلا لاگین کرده باشه، دیگه صفحه لاگین رو نبینه و بره تو پنل
-  if (pathname === "/admin/login") {
+  let isLoggedIn = false;
+  let userRole = "";
+
+  if (sessionToken) {
+    try {
+      const { payload } = await jwtVerify(sessionToken, ADMIN_JWT_SECRET);
+      if (payload.type === "session" && typeof payload.role === "string") {
+        isLoggedIn = true;
+        userRole = payload.role;
+      }
+    } catch {
+      isLoggedIn = false;
+      userRole = "";
+    }
+  }
+
+  // ۲. مدیریت صفحه ورود (چون مسیرت /login است، نه /admin/login)
+  if (pathname === "/login") {
     if (isLoggedIn && userRole && isAllowedRole(userRole)) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
     return NextResponse.next();
   }
 
-  // محافظت از مسیرهای پنل ادمین
+  // ۳. محافظت از مسیرهای پنل ادمین (/admin و زیرشاخه‌های آن)
   if (pathname.startsWith("/admin")) {
-    // اگر لاگین نکرده بود، بفرستش صفحه ورود
     if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // اگر نقش کاربری مجوز نداشت، برگردون صفحه اصلی سایت
     if (!userRole || !isAllowedRole(userRole)) {
       return NextResponse.redirect(new URL("/", request.url));
     }
@@ -38,5 +59,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/login"],
 };
