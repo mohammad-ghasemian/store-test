@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
+import { NetworkStatusMonitor } from "@/components/common/network-status-monitor";
+import { VpnDetector } from "@/components/common/vpn-detector";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +31,12 @@ export default function RootLayout({
       dir="rtl"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <NetworkStatusMonitor />
+        <Toaster position="top-center" richColors theme="dark" />
+        {children}
+        <VpnDetector />
+      </body>
     </html>
   );
 }
