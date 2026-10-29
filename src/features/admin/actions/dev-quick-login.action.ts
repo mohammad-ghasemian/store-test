@@ -1,8 +1,9 @@
-// src/features/admin/actions/dev-quick-login.action.ts
 "use server";
 
 import type { AdminRole } from "@prisma/client";
+
 import { prisma } from "@/config/prisma";
+import { type MfaPayload, resolveMfaPayload } from "../lib/admin-mfa";
 import { createPreAuthToken } from "../lib/admin-tokens";
 
 const ROLE_USERNAMES: Record<AdminRole, string> = {
@@ -13,16 +14,8 @@ const ROLE_USERNAMES: Record<AdminRole, string> = {
 };
 
 type DevQuickLoginResult =
-  | {
-      success: true;
-      preAuthToken: string;
-      mode: "setup" | "verify";
-      secret: string | null;
-    }
-  | {
-      success: false;
-      error: string;
-    };
+  | ({ success: true; preAuthToken: string } & MfaPayload)
+  | { success: false; error: string };
 
 export async function devQuickLoginAction(
   role: AdminRole,
@@ -42,11 +35,7 @@ export async function devQuickLoginAction(
   }
 
   const preAuthToken = await createPreAuthToken(admin.id);
+  const mfa = await resolveMfaPayload(admin);
 
-  return {
-    success: true,
-    preAuthToken,
-    mode: admin.mfaConfirmed ? "verify" : "setup",
-    secret: admin.mfaSecret ?? null,
-  };
+  return { success: true, preAuthToken, ...mfa };
 }

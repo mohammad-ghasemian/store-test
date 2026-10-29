@@ -1,4 +1,3 @@
-// QRcode & code generate for application mobile(2FSA Auth)
 "use client";
 
 import { QRCodeSVG } from "qrcode.react";
@@ -7,20 +6,25 @@ import { toast } from "sonner";
 
 interface MfaSetupCardProps {
   secret: string;
-
-  otpauthUrl?: string;
+  otpauthUrl: string;
 }
 
 export function MfaSetupCard({ secret, otpauthUrl }: MfaSetupCardProps) {
   const [tab, setTab] = useState<"qr" | "manual">("qr");
-  const qrValue =
-    otpauthUrl ??
-    `otpauth://totp/NextStore:x-admin?secret=${secret}&issuer=NextStore`;
 
   const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(secret);
-    toast.success("کلید در کلیپ‌بورد کپی شد");
+    try {
+      await navigator.clipboard.writeText(secret);
+      toast.success("کلید در کلیپ‌بورد کپی شد");
+    } catch {
+      toast.error("کپی انجام نشد.");
+    }
   };
+
+  const tabClass = (active: boolean) =>
+    `rounded-md py-1.5 text-xs font-medium transition-colors ${
+      active ? "bg-zinc-700 text-zinc-100" : "text-zinc-400 hover:text-zinc-200"
+    }`;
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
@@ -28,22 +32,14 @@ export function MfaSetupCard({ secret, otpauthUrl }: MfaSetupCardProps) {
         <button
           type="button"
           onClick={() => setTab("qr")}
-          className={`rounded-md py-1.5 text-xs font-medium transition-colors ${
-            tab === "qr"
-              ? "bg-zinc-700 text-zinc-100"
-              : "text-zinc-400 hover:text-zinc-200"
-          }`}
+          className={tabClass(tab === "qr")}
         >
           اسکن QR Code
         </button>
         <button
           type="button"
           onClick={() => setTab("manual")}
-          className={`rounded-md py-1.5 text-xs font-medium transition-colors ${
-            tab === "manual"
-              ? "bg-zinc-700 text-zinc-100"
-              : "text-zinc-400 hover:text-zinc-200"
-          }`}
+          className={tabClass(tab === "manual")}
         >
           ورود دستی کلید
         </button>
@@ -59,7 +55,7 @@ export function MfaSetupCard({ secret, otpauthUrl }: MfaSetupCardProps) {
             را بزنید و این بارکد را اسکن کنید:
           </p>
           <div className="rounded-lg bg-white p-2.5">
-            <QRCodeSVG value={qrValue} size={132} level="M" />
+            <QRCodeSVG value={otpauthUrl} size={132} level="M" />
           </div>
         </div>
       ) : (

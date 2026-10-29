@@ -1,4 +1,3 @@
-// src/features/admin/actions/verify-mfa.action.ts
 "use server";
 
 import { cookies } from "next/headers";
@@ -14,6 +13,9 @@ import { MfaCodeSchema } from "../schemas/admin-auth.schema";
 
 type Result = { success: true } | { success: false; error: string };
 
+// تحمل ±۳۰ ثانیه برای اختلاف ساعت
+otplib.authenticator.options = { window: 1 };
+
 export async function verifyMfaAction(input: unknown): Promise<Result> {
   const parsed = v.safeParse(MfaCodeSchema, input);
   if (!parsed.success) {
@@ -27,7 +29,7 @@ export async function verifyMfaAction(input: unknown): Promise<Result> {
   }
 
   const admin = await prisma.adminUser.findUnique({ where: { id: adminId } });
-  if (!admin?.mfaSecret) {
+  if (!admin || !admin.mfaSecret) {
     return { success: false, error: "تنظیمات دومرحله‌ای ناقص است." };
   }
 
@@ -35,11 +37,11 @@ export async function verifyMfaAction(input: unknown): Promise<Result> {
     token: code,
     secret: admin.mfaSecret,
   });
-
   if (!isCodeValid) {
     return { success: false, error: "کد ۶ رقمی اشتباه است." };
   }
 
+  // اولین تایید موفق: فعال‌سازی MFA
   if (!admin.mfaConfirmed) {
     await prisma.adminUser.update({
       where: { id: admin.id },
@@ -47,11 +49,10 @@ export async function verifyMfaAction(input: unknown): Promise<Result> {
     });
   }
 
-  // صدور توکن نشست با اطلاعات کافی برای UI
   const sessionToken = await createAdminToken({
     adminId: admin.id,
     username: admin.username,
-    role: admin.role, // فرض: role ستون enum در جدول است
+    role: admin.role,
   });
 
   const cookieStore = await cookies();
@@ -59,7 +60,7 @@ export async function verifyMfaAction(input: unknown): Promise<Result> {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 8, // 8h
+    maxAge: 60 * 60 * 8,
     path: "/",
   });
 

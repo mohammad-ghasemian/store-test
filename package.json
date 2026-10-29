@@ -12,6 +12,9 @@
     "prepare": "husky",
     "db:seed:admin": "tsx prisma/seed-admin.ts"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "argon2": "^0.45.1",

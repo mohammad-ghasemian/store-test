@@ -1,3 +1,6 @@
+// ==========================================
+// تنظیمات اتصال به دیتابیس Supabase PostgreSQL
+// ==========================================
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
@@ -8,23 +11,27 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ==========================================
+// جداول استاندارد کاربران فروشگاه (Better Auth)
+// ==========================================
+
 model User {
-  id            String  @id @default(cuid())
-  name          String? // نام و نام خانوادگی
-  email         String? @unique // ایمیل اختیاری است
-  emailVerified Boolean @default(false)
-  image         String?
-  role          String  @default("user") // admin | user
+  id                  String    @id @default(cuid())
+  name                String?
+  email               String?   @unique
+  emailVerified       Boolean   @default(false)
+  image               String?
+  role                String    @default("user")
 
-  // نام‌گذاری‌های استاندارد مورد انتظار Better Auth برای شماره موبایل
-  phoneNumber         String? @unique
-  phoneNumberVerified Boolean @default(false)
+  // احراز هویت با شماره موبایل
+  phoneNumber         String?   @unique
+  phoneNumberVerified Boolean   @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  sessions Session[]
-  accounts Account[]
+  sessions            Session[]
+  accounts            Account[]
 
   @@map("user")
 }
@@ -39,8 +46,10 @@ model Session {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // حذف سشن‌ها در صورت پاک شدن کاربر
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("session")
 }
 
@@ -51,7 +60,7 @@ model Account {
   providerId            String
   accessToken           String?
   refreshToken          String?
-  idToken               String? // اضافه شده برای سازگاری با OAuth
+  idToken               String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
@@ -59,76 +68,91 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, accountId])
+  @@index([userId])
   @@map("account")
 }
 
 model Verification {
   id         String   @id @default(cuid())
-  identifier String // شماره موبایل یا ایمیل
-  value      String // کد OTP
+  identifier String
+  value      String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  @@index([identifier])
   @@map("verification")
 }
 
-// نقش‌های سیستم مدیریت
+// ==========================================
+// ساختار نقش‌ها و وضعیت‌های کنترل پنل مدیریت (RBAC)
+// ==========================================
 
 enum AdminRole {
-  SUPER_ADMIN
-  ADMIN
-  CONTENT_MANAGER
-  SUPPORT
+  SUPER_ADMIN     // دسترسی تام به تمام تنظیمات، لاگ‌ها و اکانت‌ها
+  ADMIN           // مدیریت فنی، کاربران، و فرآیندهای مالی
+  CONTENT_MANAGER // مدیریت کاتالوگ محصولات، دسته‌بندی‌ها و مقالات
+  SUPPORT         // پاسخگویی به مشتریان و تیکت‌ها با کمترین سطح دسترسی
 }
 
-// وضعیت اکانت ادمین
 enum AdminStatus {
-  ACTIVE
-  SUSPENDED
-  LOCKED
+  ACTIVE          // فعال و مجاز به ورود
+  SUSPENDED       // معلق شده موقت توسط سوپرادمین
+  LOCKED          // قفل امنیتی خودکار به دلیل تلاش‌های مکرر ناموفق
 }
 
-// جدول اختصاصی مدیران سیستم
+// ==========================================
+// جدول مدیران و کارمندان سیستم
+// ==========================================
+
 model AdminUser {
   id             String          @id @default(cuid())
-  username       String          @unique
-  fullName       String
-  passwordHash   String
+  username       String          @unique // نام کاربری ورود (یکتا)
+  fullName       String          // نام و نام خانوادگی جهت نمایش در هدر
+  passwordHash   String          // هش پسورد با الگوریتم Argon2id
   role           AdminRole       @default(SUPPORT)
   status         AdminStatus     @default(ACTIVE)
 
-  // لایه امنیت ورود دو مرحله‌ای (TOTP)
-  mfaSecret      String?         // کلید سکرت Base32 برای الگوریتم TOTP
-  isMfaEnabled   Boolean         @default(true) // امکان فعال/غیرفعال کردن اجباری بودن MFA توسط سوپرادمین
-  mfaConfirmed   Boolean         @default(false) // آیا راه‌اندازی اولیه و اسکن بارکد با موفقیت تأیید شده است؟
+  // تنظیمات امنیت دومرحله‌ای مبتنی بر زمان (TOTP)
+  mfaSecret      String?         // کلید Base32 برای ساخت کدهای Authenticator
+  isMfaEnabled   Boolean         @default(true) // سیاست اجباری بودن MFA
+  mfaConfirmed   Boolean         @default(false) // آیا راه‌اندازی اولیه و اسکن QR تأیید شده است؟
 
-  failedAttempts Int             @default(0)
-  lockedUntil    DateTime?
+  // کنترل حملات Brute-force
+  failedAttempts Int             @default(0)     // تعداد دفعات ورود ناموفق
+  lockedUntil    DateTime?                       // تا این زمان ورود برای کاربر مسدود است
 
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
   auditLogs      AdminAuditLog[]
 
+  @@index([role])
+  @@index([username, status])
   @@map("admin_users")
 }
 
-// جدول ثبت وقایع امنیتی و تغییرات سامانه ادمین
+// ==========================================
+// ثبت رخدادهای امنیتی و ردپای تغییرات مدیران
+// ==========================================
+
 model AdminAuditLog {
   id        String    @id @default(cuid())
   adminId   String
-  action    String    // مثلا: LOGIN_SUCCESS, MFA_SETUP_SUCCESS, MFA_VERIFY_FAILED, PRODUCT_UPDATE
-  resource  String?   // منبع تحت تأثیر (مثلا: AdminUser:cuid یا Product:123)
-  ipAddress String?
-  userAgent String?
+  action    String    // نوع رویداد: LOGIN_SUCCESS, LOGIN_FAILED, PASSWORD_CHANGE, PRODUCT_MUTATION
+  resource  String?   // هدف رویداد: شناسه یا مسیر بخش تحت تأثیر
+  ipAddress String?   // آی‌پی مبدأ جهت مانیتورینگ امنیتی
+  userAgent String?   // اطلاعات مرورگر و دستگاه مجری عملیات
   createdAt DateTime  @default(now())
 
+  // ارتباط با مدیر مجری؛ با حذف مدیر، لاگ‌های وی برای امنیت پاک می‌شوند
   admin     AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
   @@map("admin_audit_logs")
 }

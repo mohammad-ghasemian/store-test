@@ -1,4 +1,3 @@
-// src/features/admin/components/clients/admin-login-wizard.tsx
 "use client";
 
 import type { AdminRole } from "@prisma/client";
@@ -10,11 +9,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { devQuickLoginAction } from "../../actions/dev-quick-login.action";
 import { loginStepOneAction } from "../../actions/login-step-one.action";
 import { verifyMfaAction } from "../../actions/verify-mfa.action";
+import { MfaSetupCard } from "./mfa-setup-card";
 
-// تشخیص محیط توسعه
 const isDev = process.env.NODE_ENV === "development";
 
-// نقش‌های قابل انتخاب برای ورود سریع توسعه
 const DEV_ROLES: AdminRole[] = [
   "SUPER_ADMIN",
   "ADMIN",
@@ -22,25 +20,39 @@ const DEV_ROLES: AdminRole[] = [
   "SUPPORT",
 ];
 
+type MfaState = {
+  preAuthToken: string;
+  mode: "setup" | "verify";
+  secret?: string;
+  otpauthUrl?: string;
+};
+
 export function AdminLoginWizard() {
-  // UI state
   const [step, setStep] = useState<"step1" | "mfa">("step1");
 
-  // فرم مرحله ۱
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isStepOneLoading, setIsStepOneLoading] = useState(false);
 
-  // MFA
   const [otpCode, setOtpCode] = useState("");
-  const [preAuthToken, setPreAuthToken] = useState<string | null>(null);
+  const [mfa, setMfa] = useState<MfaState | null>(null);
   const [isMfaLoading, setIsMfaLoading] = useState(false);
 
-  // Dev quick login
   const [selectedDevRole, setSelectedDevRole] = useState<AdminRole>("SUPPORT");
   const [isDevLoading, setIsDevLoading] = useState(false);
+  const OTP_SLOT_KEYS = ["a", "b", "c", "d", "e", "f"] as const;
+  // ورود به مرحله MFA بر اساس پاسخ سرور
+  function enterMfaStep(res: MfaState) {
+    setMfa(res);
+    setOtpCode("");
+    setStep("mfa");
+    toast.info(
+      res.mode === "setup"
+        ? "ابتدا کد را در 2FAS Auth ثبت و سپس کد ۶ رقمی را وارد کنید."
+        : "کد ۶ رقمی اپلیکیشن Authenticator را وارد کنید.",
+    );
+  }
 
-  // مرحله ۱: ارسال یوزرنیم/پسورد → دریافت preAuthToken
   async function handleStepOne(e: React.FormEvent) {
     e.preventDefault();
     if (!username || !password) return;
@@ -54,9 +66,7 @@ export function AdminLoginWizard() {
         return;
       }
 
-      setPreAuthToken(res.preAuthToken);
-      setStep("mfa");
-      toast.info("کد ۶ رقمی اپلیکیشن Authenticator را وارد کنید.");
+      enterMfaStep(res);
     } catch {
       toast.error("خطای غیرمنتظره در ورود.");
     } finally {
@@ -64,22 +74,26 @@ export function AdminLoginWizard() {
     }
   }
 
-  // مرحله ۲: تایید MFA → ست شدن کوکی سشن → ریدایرکت سخت به /admin
   async function handleVerifyMfa(e: React.FormEvent) {
     e.preventDefault();
-    if (!preAuthToken) {
+
+    if (!mfa) {
       toast.error("نشست منقضی شده. دوباره وارد شوید.");
       setStep("step1");
       return;
     }
-    if (!otpCode || otpCode.length !== 6) {
+
+    if (otpCode.length !== 6) {
       toast.error("کد ۶ رقمی معتبر نیست.");
       return;
     }
 
     setIsMfaLoading(true);
     try {
-      const res = await verifyMfaAction({ code: otpCode, preAuthToken });
+      const res = await verifyMfaAction({
+        code: otpCode,
+        preAuthToken: mfa.preAuthToken,
+      });
 
       if (!res.success) {
         toast.error(res.error ?? "تایید دومرحله‌ای ناموفق بود.");
@@ -95,9 +109,9 @@ export function AdminLoginWizard() {
     }
   }
 
-  // Dev Quick Login: فقط در development
   async function handleDevQuickLogin() {
     if (!isDev) return;
+
     setIsDevLoading(true);
     try {
       const res = await devQuickLoginAction(selectedDevRole);
@@ -107,9 +121,7 @@ export function AdminLoginWizard() {
         return;
       }
 
-      setPreAuthToken(res.preAuthToken);
-      setStep("mfa");
-      toast.message("Dev Login: کد ۶ رقمی را وارد کنید.");
+      enterMfaStep(res);
     } catch {
       toast.error("Dev Quick Login failed.");
     } finally {
@@ -119,7 +131,6 @@ export function AdminLoginWizard() {
 
   return (
     <div className="mx-auto w-full max-w-sm py-10">
-      {/* Dev Quick Login panel */}
       {isDev && (
         <div className="mb-6 space-y-2 rounded-xl border border-dashed border-emerald-500/30 bg-emerald-500/5 p-3 text-right">
           <label
@@ -141,6 +152,7 @@ export function AdminLoginWizard() {
                 </option>
               ))}
             </select>
+
             <button
               type="button"
               onClick={handleDevQuickLogin}
@@ -205,14 +217,20 @@ export function AdminLoginWizard() {
         </form>
       )}
 
-      {step === "mfa" && (
+      {step === "mfa" && mfa && (
         <form onSubmit={handleVerifyMfa} className="mt-6 space-y-4 text-right">
+          {mfa.mode === "setup" && mfa.secret && mfa.otpauthUrl && (
+            <MfaSetupCard secret={mfa.secret} otpauthUrl={mfa.otpauthUrl} />
+          )}
+
           <div className="flex flex-col items-center gap-2">
             <span
               id="otp-label"
               className="text-center text-xs font-medium text-zinc-300"
             >
-              کد ۶ رقمی اپلیکیشن Authenticator
+              {mfa.mode === "setup"
+                ? "پس از ثبت در 2FAS، کد ۶ رقمی را وارد کنید"
+                : "کد ۶ رقمی اپلیکیشن Authenticator"}
             </span>
 
             <div dir="ltr" className="my-2">
@@ -225,21 +243,18 @@ export function AdminLoginWizard() {
                 containerClassName="flex justify-center"
                 render={({ slots }) => (
                   <div className="group/slots flex items-center gap-2">
-                    {slots.map((slot, idx) => {
-                      const slotKey = `otp-slot-${idx}`;
-                      return (
-                        <div
-                          key={slotKey}
-                          className={`flex h-12 w-10 items-center justify-center rounded-lg border font-mono text-lg font-bold transition-all ${
-                            slot.isActive
-                              ? "border-emerald-500 ring-2 ring-emerald-500/20"
-                              : "border-zinc-800 bg-zinc-900/50 text-zinc-100"
-                          }`}
-                        >
-                          {slot.char}
-                        </div>
-                      );
-                    })}
+                    {slots.map((slot, idx) => (
+                      <div
+                        key={OTP_SLOT_KEYS[idx]}
+                        className={`flex h-12 w-10 items-center justify-center rounded-lg border font-mono text-lg font-bold transition-all ${
+                          slot.isActive
+                            ? "border-emerald-500 ring-2 ring-emerald-500/20"
+                            : "border-zinc-800 bg-zinc-900/50 text-zinc-100"
+                        }`}
+                      >
+                        {slot.char}
+                      </div>
+                    ))}
                   </div>
                 )}
               />
