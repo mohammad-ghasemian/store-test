@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+// اصلاح اینترفیس: حذف موارد اضافه و اصلاح تایپ‌ها
 interface MfaSetupCardProps {
   secret: string;
   otpauthUrl: string;
