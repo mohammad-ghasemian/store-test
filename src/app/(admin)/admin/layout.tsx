@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { AdminHeader } from "@/features/admin/components/server/headers/admin-header";
 import { verifyAdminToken } from "@/features/admin/lib/admin-tokens";
 
 export default async function AdminDashboardLayout({
@@ -19,5 +20,11 @@ export default async function AdminDashboardLayout({
     redirect("/login");
   }
 
-  return <div>{children}</div>;
+  return (
+    <div lang="fa" dir="rtl" className="min-h-screen">
+      <AdminHeader />
+
+      <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">{children}</main>
+    </div>
+  );
 }

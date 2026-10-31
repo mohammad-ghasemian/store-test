@@ -1,6 +1,3 @@
-// src/app/(admin)/admin/page.tsx
-/* صفحه نمای کلی داشبورد اصلی ادمین */
-
 import { Activity, ShieldCheck, UserCheck } from "lucide-react";
 import type { Metadata } from "next";
 
